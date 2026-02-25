@@ -1,0 +1,596 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Lemfest Room Matchmaking</title>
+
+  <!-- Optional font (works without it too) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Marcellus&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --night-1:#070A1A;
+      --night-2:#0B1030;
+      --night-3:#111A44;
+      --gold:#C9A227;
+      --turkiye:#E30A17;
+      --ink:#EAF0FF;
+      --muted:#AEB7D6;
+      --card:#0E163AEE;
+    }
+
+    *{ box-sizing:border-box; }
+    body{
+      margin:0;
+      color: var(--ink);
+      background:
+        radial-gradient(900px 500px at 20% -10%, rgba(201,162,39,.18), transparent 60%),
+        radial-gradient(800px 500px at 85% 10%, rgba(227,10,23,.16), transparent 55%),
+        radial-gradient(900px 600px at 50% 110%, rgba(46,211,255,.10), transparent 60%),
+        linear-gradient(180deg, var(--night-1), var(--night-2) 45%, var(--night-3));
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      overflow-x:hidden;
+    }
+
+    /* subtle star field */
+    body:before{
+      content:"";
+      position:fixed;
+      inset:0;
+      pointer-events:none;
+      background-image:
+        radial-gradient(2px 2px at 10% 20%, rgba(255,255,255,.35) 50%, transparent 60%),
+        radial-gradient(1.5px 1.5px at 35% 70%, rgba(255,255,255,.30) 50%, transparent 60%),
+        radial-gradient(1.2px 1.2px at 65% 30%, rgba(255,255,255,.25) 50%, transparent 60%),
+        radial-gradient(1.8px 1.8px at 85% 75%, rgba(255,255,255,.28) 50%, transparent 60%),
+        radial-gradient(1px 1px at 50% 45%, rgba(255,255,255,.22) 50%, transparent 60%);
+      opacity:.75;
+      mix-blend-mode: screen;
+    }
+
+    .wrap{ max-width: 1040px; margin: 0 auto; padding: 22px; }
+
+    .topbar{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      padding: 14px 16px;
+      border: 1px solid rgba(255,255,255,.08);
+      background: linear-gradient(180deg, rgba(14,22,58,.78), rgba(14,22,58,.40));
+      border-radius: 16px;
+      box-shadow: 0 18px 40px rgba(0,0,0,.25);
+      backdrop-filter: blur(10px);
+      margin-bottom: 16px;
+    }
+
+    .brand{ display:flex; align-items:center; gap:12px; min-width: 240px; }
+    .brand img{ height: 28px; width:auto; filter: drop-shadow(0 10px 18px rgba(0,0,0,.35)); }
+
+    .headline{ display:flex; flex-direction:column; gap:2px; }
+    .headline .title{
+      font-family: Marcellus, Georgia, serif;
+      font-size: 18px;
+      letter-spacing:.3px;
+      margin:0;
+      color: var(--ink);
+    }
+    .headline .sub{ font-size: 12px; color: var(--muted); margin:0; }
+
+    .badge{
+      display:flex; align-items:center; gap:10px;
+      padding: 8px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(201,162,39,.25);
+      background: rgba(201,162,39,.10);
+      color: #FFE7A0;
+      font-size: 12px;
+      white-space:nowrap;
+    }
+    .badge .dot{
+      width:8px; height:8px; border-radius:50%;
+      background: var(--turkiye);
+      box-shadow: 0 0 0 6px rgba(227,10,23,.18);
+    }
+
+    .grid { display:grid; grid-template-columns: 1fr; gap: 16px; }
+    @media (min-width: 980px){ .grid { grid-template-columns: 1.05fr 0.95fr; } }
+
+    .card{
+      background: var(--card);
+      border-radius: 18px;
+      padding: 16px;
+      border: 1px solid rgba(255,255,255,.09);
+      box-shadow: 0 22px 50px rgba(0,0,0,.35);
+      backdrop-filter: blur(10px);
+    }
+
+    h2{
+      font-family: Marcellus, Georgia, serif;
+      font-size: 16px;
+      margin: 0 0 12px;
+      color: #F7F1D1;
+      letter-spacing:.25px;
+    }
+
+    label{ font-size: 12px; margin: 10px 0 6px; display:block; color: #D6DCF4; }
+    .help{ font-size: 12px; color: var(--muted); margin-top: -2px; }
+
+    input[type="text"], select{
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,.10);
+      background: rgba(9,14,40,.55);
+      color: var(--ink);
+      outline: none;
+    }
+    input[type="text"]::placeholder{ color: rgba(234,240,255,.45); }
+    select option{ background: #0B1030; color: var(--ink); }
+
+    input[type="range"]{ width:100%; accent-color: var(--gold); }
+
+    .row2 { display:grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .sliderline { display:grid; grid-template-columns: 1fr auto; gap: 10px; align-items:center; }
+    .pill{
+      font-size: 12px;
+      background: rgba(201,162,39,.10);
+      border: 1px solid rgba(201,162,39,.25);
+      padding: 6px 10px;
+      border-radius: 999px;
+      min-width: 34px;
+      text-align:center;
+      color: #FFE7A0;
+    }
+
+    .btns{ display:flex; flex-wrap:wrap; gap: 10px; margin-top: 14px; }
+    button{
+      border:0;
+      border-radius: 12px;
+      padding: 10px 12px;
+      cursor:pointer;
+      font-weight: 600;
+      letter-spacing:.15px;
+    }
+    .primary{
+      background: linear-gradient(90deg, rgba(227,10,23,.95), rgba(201,162,39,.95));
+      color: #090A12;
+      box-shadow: 0 16px 28px rgba(0,0,0,.35);
+    }
+    .danger{
+      background: rgba(227,10,23,.14);
+      color: #FFD6D6;
+      border: 1px solid rgba(227,10,23,.25);
+    }
+
+    .muted{ font-size: 12px; color: var(--muted); }
+
+    .summary{ margin-top: 10px; display:flex; flex-wrap:wrap; gap: 8px; }
+    .chip{
+      font-size: 12px;
+      background: rgba(234,240,255,.10);
+      border: 1px solid rgba(255,255,255,.10);
+      padding: 6px 10px;
+      border-radius: 999px;
+      color: #EAF0FF;
+    }
+    .chip strong{ font-weight:700; }
+    .warn{
+      background: rgba(227,10,23,.14);
+      border-color: rgba(227,10,23,.25);
+      color: #FFD6D6;
+    }
+
+    .matchbox{
+      margin-top: 12px;
+      padding: 12px;
+      border-radius: 16px;
+      border: 1px solid rgba(201,162,39,.22);
+      background: linear-gradient(180deg, rgba(201,162,39,.10), rgba(14,22,58,.35));
+    }
+    .matchtitle{
+      font-weight: 700;
+      color: #FFE7A0;
+      margin-bottom: 6px;
+    }
+    ul{ margin: 8px 0 0 18px; color: #EAF0FF; }
+    li{ margin: 4px 0; }
+    .instruction{
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px dashed rgba(255,255,255,.18);
+      font-size: 12px;
+      color: rgba(234,240,255,.82);
+    }
+
+    /* table */
+    .tablewrap{
+      margin-top: 10px;
+      overflow:auto;
+      -webkit-overflow-scrolling: touch;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,.08);
+      background: rgba(9,14,40,.25);
+    }
+    table{ width:100%; border-collapse:collapse; font-size: 13px; min-width: 640px; }
+    th, td{ text-align:left; padding: 10px 10px; border-bottom: 1px solid rgba(255,255,255,.08); }
+    th{ color:#D6DCF4; font-weight: 600; position: sticky; top: 0; background: rgba(14,22,58,.92); }
+    td{ color:#EAF0FF; }
+    .tag{
+      font-size: 12px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: rgba(234,240,255,.10);
+      border: 1px solid rgba(255,255,255,.10);
+      display:inline-block;
+    }
+
+    @media (max-width: 520px){
+      .wrap{ padding: 14px; }
+      .topbar{ padding: 12px 12px; }
+      .brand img{ height: 24px; }
+      .headline .title{ font-size: 16px; }
+      .row2{ grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <div class="brand">
+        <img alt="lemlist" src="https://web-assets.lemlist.com/prod/a327b952f10c989e4c701d945b21bc4f" />
+        <div class="headline">
+          <p class="title">Lemfest Room Matchmaking</p>
+          <p class="sub">Find your closest roommate matches</p>
+        </div>
+      </div>
+
+      <div class="badge">
+        <span class="dot"></span>
+        <span>Türkiye</span>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <h2>Register to find a roommate</h2>
+
+        <label>Name / ID</label>
+        <input id="name" type="text" placeholder="e.g. Alice" />
+
+        <label>Gender (required)</label>
+        <select id="gender">
+          <option value="" selected disabled>Select…</option>
+          <option value="female">female</option>
+          <option value="male">male</option>
+          <option value="non-binary">non-binary</option>
+          <option value="other">other</option>
+        </select>
+        <div class="muted">Matching happens within the same gender only.</div>
+
+        <div class="row2" style="margin-top:10px;">
+          <div>
+            <label>Party people</label>
+            <div class="sliderline">
+              <input id="party" type="range" min="0" max="5" step="1" value="0" />
+              <span class="pill" id="partyVal">0</span>
+            </div>
+          </div>
+
+          <div>
+            <label>Early bird</label>
+            <div class="sliderline">
+              <input id="early" type="range" min="0" max="5" step="1" value="0" />
+              <span class="pill" id="earlyVal">0</span>
+            </div>
+          </div>
+
+          <div>
+            <label>Sporty</label>
+            <div class="sliderline">
+              <input id="sporty" type="range" min="0" max="5" step="1" value="0" />
+              <span class="pill" id="sportyVal">0</span>
+            </div>
+          </div>
+
+          <div>
+            <label>Snoring level</label>
+            <div class="help">What's your level of snoring?</div>
+            <div class="sliderline">
+              <input id="snore" type="range" min="0" max="5" step="1" value="0" />
+              <span class="pill" id="snoreVal">0</span>
+            </div>
+          </div>
+        </div>
+
+        <label>Snoring weight (importance)</label>
+        <div class="help">Is being with someone who snores a big issue for you (5 = big issue)?</div>
+        <div class="sliderline">
+          <input id="snoreWeight" type="range" min="1" max="5" step="1" value="2" />
+          <span class="pill" id="snoreWeightVal">2</span>
+        </div>
+
+        <div class="btns">
+          <button class="primary" id="addBtn">Match me</button>
+          <button class="danger" id="clearBtn">Reset</button>
+        </div>
+
+        <div id="status" class="muted" style="margin-top:12px;"></div>
+      </div>
+
+      <div class="card">
+        <h2>People</h2>
+        <div class="muted">If a gender has an odd count, one person in that gender will remain unassigned.</div>
+
+        <div id="genderSummary" class="summary"></div>
+
+        <div id="quickMatch" class="matchbox">
+          <div class="matchtitle">There is a match!</div>
+          <div id="quickMatchBody" class="muted">Register to see closest matches for your profile.</div>
+          <div class="instruction">Contact this person via slack and ask her if she/he wants to be your roomate for the lemfest</div>
+        </div>
+
+        <div class="tablewrap" aria-label="People list">
+          <table id="peopleTable">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Gender</th>
+                <th>Party</th>
+                <th>Early</th>
+                <th>Sporty</th>
+                <th>Snoring</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+
+        <div class="muted" style="margin-top:10px;">
+          Tip: On mobile, swipe the table sideways if needed.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /**
+     * This version expects Netlify Functions:
+     *  - GET  /.netlify/functions/people
+     *  - POST /.netlify/functions/register
+     *  - (optional) POST /.netlify/functions/delete
+     *
+     * If these functions are not deployed / Netlify DB isn't set up,
+     * the page will show an error in the status area.
+     */
+    let people = [];
+    let activeProfileName = null;
+
+    const $ = (id) => document.getElementById(id);
+
+    async function apiGetPeople() {
+      const res = await fetch("/.netlify/functions/people", { cache: "no-store" });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json?.error || "Failed to load people");
+      return json.people || [];
+    }
+
+    async function apiRegister(person) {
+      const res = await fetch("/.netlify/functions/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(person),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json?.error || "Failed to register");
+      return true;
+    }
+
+    async function apiDelete(name) {
+      const res = await fetch("/.netlify/functions/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json?.error || "Failed to delete");
+      return true;
+    }
+
+    function setStatus(msg) {
+      const el = $("status");
+      if (!el) return;
+      el.textContent = msg || "";
+    }
+
+    function bind(rangeId, pillId) {
+      const r = $(rangeId);
+      const p = $(pillId);
+      p.textContent = r.value;
+      r.addEventListener("input", () => p.textContent = r.value);
+    }
+
+    bind("party", "partyVal");
+    bind("early", "earlyVal");
+    bind("sporty", "sportyVal");
+    bind("snore", "snoreVal");
+    bind("snoreWeight", "snoreWeightVal");
+
+    function escapeHtml(s) {
+      return String(s)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function distance(a, b, snoreWeight) {
+      return (
+        Math.abs(a.party - b.party) +
+        Math.abs(a.early - b.early) +
+        Math.abs(a.sporty - b.sporty) +
+        snoreWeight * Math.abs(a.snore - b.snore)
+      );
+    }
+
+    function groupCounts() {
+      const counts = new Map();
+      for (const p of people) counts.set(p.gender, (counts.get(p.gender) || 0) + 1);
+      return counts;
+    }
+
+    function renderGenderSummary() {
+      const el = $("genderSummary");
+      el.innerHTML = "";
+
+      const counts = groupCounts();
+      const genders = Array.from(counts.keys()).sort();
+
+      if (genders.length === 0) {
+        el.innerHTML = `<span class="chip">No people yet</span>`;
+        return;
+      }
+
+      for (const g of genders) {
+        const n = counts.get(g);
+        const odd = (n % 2 === 1);
+        const chip = document.createElement("span");
+        chip.className = "chip" + (odd ? " warn" : "");
+        chip.innerHTML = `<strong>${escapeHtml(g)}:</strong> ${n} ${odd ? "• odd (1 unassigned)" : "• even"}`;
+        el.appendChild(chip);
+      }
+    }
+
+    function findClosestMatchesForActiveProfile() {
+      const body = $("quickMatchBody");
+      body.innerHTML = "";
+
+      if (!activeProfileName) {
+        body.textContent = "Register to see closest matches for your profile.";
+        return;
+      }
+
+      const target = people.find(p => p.name === activeProfileName);
+      if (!target) {
+        body.textContent = "Register to see closest matches for your profile.";
+        return;
+      }
+
+      const w = Number($("snoreWeight").value);
+
+      const candidates = people
+        .filter(p => p.gender === target.gender && p.name !== target.name)
+        .map(p => ({ name: p.name, d: distance(target, p, w) }))
+        .sort((a, b) => a.d - b.d)
+        .slice(0, 6);
+
+      if (candidates.length === 0) {
+        body.textContent = `No matches yet for ${target.name} (${target.gender}).`;
+        return;
+      }
+
+      const ul = document.createElement("ul");
+      for (const c of candidates) {
+        const li = document.createElement("li");
+        li.textContent = c.name; // no details
+        ul.appendChild(li);
+      }
+      body.appendChild(ul);
+    }
+
+    function renderPeople() {
+      const tbody = $("peopleTable").querySelector("tbody");
+      tbody.innerHTML = "";
+
+      for (const p of people) {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td><span class="tag">${escapeHtml(p.name)}</span></td>
+          <td>${escapeHtml(p.gender)}</td>
+          <td>${Number(p.party)}</td>
+          <td>${Number(p.early)}</td>
+          <td>${Number(p.sporty)}</td>
+          <td>${Number(p.snore)}</td>
+          <td><button class="danger" data-del="${escapeHtml(p.name)}">Delete</button></td>
+        `;
+        tbody.appendChild(tr);
+      }
+
+      tbody.querySelectorAll("button[data-del]").forEach(btn => {
+        btn.addEventListener("click", async () => {
+          try {
+            const name = btn.getAttribute("data-del");
+            await apiDelete(name);
+            if (activeProfileName === name) activeProfileName = null;
+            await refreshPeople();
+          } catch (e) {
+            alert(e.message || String(e));
+          }
+        });
+      });
+
+      renderGenderSummary();
+    }
+
+    async function refreshPeople() {
+      people = await apiGetPeople();
+      renderPeople();
+      renderGenderSummary();
+      findClosestMatchesForActiveProfile();
+    }
+
+    $("addBtn").addEventListener("click", async () => {
+      try {
+        setStatus("");
+
+        const name = $("name").value.trim();
+        const gender = $("gender").value;
+
+        if (!name) return alert("Name is required.");
+        if (!gender) return alert("Gender is required.");
+
+        const person = {
+          name,
+          gender,
+          party: Number($("party").value),
+          early: Number($("early").value),
+          sporty: Number($("sporty").value),
+          snore: Number($("snore").value),
+        };
+
+        await apiRegister(person);
+        activeProfileName = name;
+
+        $("name").value = "";
+        $("gender").value = "";
+
+        await refreshPeople();
+        setStatus("Saved ✅");
+      } catch (e) {
+        console.error(e);
+        setStatus("Not connected to the database. Make sure Netlify DB + Functions are deployed.");
+        alert(e.message || String(e));
+      }
+    });
+
+    $("clearBtn").addEventListener("click", () => location.reload());
+
+    $("snoreWeight").addEventListener("input", () => {
+      // weight affects distance ranking
+      findClosestMatchesForActiveProfile();
+    });
+
+    // boot
+    refreshPeople().catch(err => {
+      console.error(err);
+      setStatus("Not connected to the database. Make sure Netlify DB + Functions are deployed.");
+    });
+  </script>
+</body>
+</html>
