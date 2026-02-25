@@ -3,7 +3,7 @@ import { neon } from "@netlify/neon";
 export const sql = neon();
 
 export async function ensureSchema() {
-  await sql(`
+  await sql.query(`
     create table if not exists registrations (
       id bigserial primary key,
       created_at timestamptz not null default now(),
@@ -16,7 +16,7 @@ export async function ensureSchema() {
     );
   `);
 
-  await sql(`
+  await sql.query(`
     create unique index if not exists registrations_name_key
     on registrations (name);
   `);
