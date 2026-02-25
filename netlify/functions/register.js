@@ -38,7 +38,7 @@ export async function handler(event) {
       return { statusCode: 400, headers, body: JSON.stringify({ error: "Scores must be integers 0..5" }) };
     }
 
-    await sql(
+    await sql.query(
       `insert into registrations (name, gender, party, early, sporty, snore)
        values ($1, $2, $3, $4, $5, $6)
        on conflict (name) do update set
